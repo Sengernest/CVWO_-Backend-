@@ -15,21 +15,19 @@ var db *gorm.DB
 
 func main() {
 	var err error
-	// Open the database connection
+
 	db, err = gorm.Open(sqlite.Open("database.db"), &gorm.Config{TranslateError: true})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Migrate models
 	if err := db.AutoMigrate(&models.User{}, &models.Comment{}, &models.Thread{}); err != nil {
 		log.Fatalf("Failed to migrate models: %v", err)
 	}
 
-	// Create Gin router
 	router := gin.Default()
 
-	// Routes
+
 	router.GET("/threads", func(ctx *gin.Context) {
 		threads, err := GetThreads()
 		if err != nil {
@@ -112,56 +110,8 @@ func main() {
 		ctx.Status(http.StatusNoContent)
 	})
 
-	// Run server
+	
 	router.Run(":8080")
 }
 
-// Helper functions (the same as before)
-func GetThreads() ([]models.Thread, error) {
-	var threads []models.Thread
-	if err := db.Find(&threads).Error; err != nil {
-		return nil, err
-	}
-	return threads, nil
-}
 
-func CreateThread(thread *models.Thread) (*models.Thread, error) {
-	if err := db.Create(thread).Error; err != nil {
-		return nil, err
-	}
-	return thread, nil
-}
-
-func UpdateThread(ID uint, Title string, Content string) (*models.Thread, error) {
-	var thread models.Thread
-	if err := db.First(&thread, ID).Error; err != nil {
-		return nil, err
-	}
-
-	if err := db.Model(&thread).Updates(models.Thread{Title: Title, Content: Content}).Error; err != nil {
-		return nil, err
-	}
-
-	return &thread, nil
-}
-
-func DeleteThread(ID uint) error {
-	result := db.Delete(&models.Thread{}, ID)
-	return result.Error
-}
-
-func GetComments(ThreadID uint) ([]models.Comment, error) {
-	var comments []models.Comment
-	if err := db.Where("thread_id = ?", ThreadID).Find(&comments).Error; err != nil {
-		return nil, err
-	}
-	return comments, nil
-}
-
-func GetUsers() ([]models.User, error) {
-	var users []models.User
-	if err := db.Find(&users).Error; err != nil {
-		return nil, err
-	}
-	return users, nil
-}
